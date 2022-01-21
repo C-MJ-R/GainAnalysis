@@ -83,6 +83,9 @@ void ManVino(int nbin=300, double nmin= -1, int nmax=20, int npeaks=15){
     int start = 65;     //starting voltage
     int dif = 2;        //difference in voltage between each run
     double snr[numrun];
+    double K[numrun];
+    double Prob[numrun];
+
     for (int jk = 0; jk <5; jk++)
     {
         run[jk] = start + (jk*dif);
@@ -252,6 +255,8 @@ void ManVino(int nbin=300, double nmin= -1, int nmax=20, int npeaks=15){
       P = k_dup_ll/(1+k_dup_ll);
       double ff_ll = 1.+(2.*k_dup_ll);
       cout << " " << "p: " << P << " " << " k_dup: " << k_dup_ll << " Var: " << ff_ll << endl;
+      K[lk] = k_dup_ll;
+      Prob[lk] = P;
 
       //SNR Extenstion Analysis
       
@@ -259,7 +264,8 @@ void ManVino(int nbin=300, double nmin= -1, int nmax=20, int npeaks=15){
       Varroot[lk] = sqrt(ff_ll);
       double mean[numrun];
       mean[lk] = lambda/(1-P);
-      snr[lk] = mean[lk]/Varroot[lk];
+      //snr[lk] = mean[lk]/Varroot[lk];
+      snr[lk] = sqrt(lambda)/sqrt(1+P);
       printf("The SNR is %f for %dV\n",snr[lk],run[lk]);
 
 
@@ -303,10 +309,15 @@ void ManVino(int nbin=300, double nmin= -1, int nmax=20, int npeaks=15){
     Int_t p = numrun;
     Double_t x[p], y[p];
     Double_t ex[p];
+    Double_t yKdup[p];
+    Double_t yP[p];
+
     for (Int_t i=0; i<p; i++) 
     {
       x[i] = 1.0*run[i];
       y[i] = 1.0*snr[i];
+      yKdup[i] = 1.0*K[i];
+      yP[i] = 1.0*Prob[i];
       ex[i] = 0;
    }
     TGraph *gr = new TGraph (p, x, y);
@@ -338,6 +349,21 @@ void ManVino(int nbin=300, double nmin= -1, int nmax=20, int npeaks=15){
    bdv = cept/(-grad);
    bdverr = bdv*(sqrt(pow(cepterr/cept,2)+pow(graderr/grad,2)));
    printf("The breakdown voltage for this data set is %f +/-%f\n", bdv,bdverr);
+
+    
+   TCanvas *cKP = new TCanvas("KP","K_dup and P as a function of bias", 200,10,600,400);
+   TGraph *grK = new TGraph (p, x, yKdup);
+   grK->SetMarkerColor(6);
+   TGraph *grP = new TGraph (p, x, yP);
+
+   // Create a TMultiGraph and draw it:
+        TMultiGraph *mg5 = new TMultiGraph();
+        mg5->Add(grK);
+        mg5->Add(grP);
+        mg5->SetTitle("K_dup and P as a function of Bias");
+        mg5->GetXaxis()->SetTitle("Voltage (V)");
+        mg5->GetYaxis()->SetTitle("Probability");
+        mg5->Draw("A*");
 
 
 
