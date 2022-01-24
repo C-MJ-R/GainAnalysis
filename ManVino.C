@@ -83,6 +83,9 @@ void ManVino(int nbin=300, double nmin= -1, int nmax=20, int npeaks=15){
     int start = 65;     //starting voltage
     int dif = 2;        //difference in voltage between each run
     double snr[numrun];
+    double snrin[numrun];
+    double snrout[numrun];
+    double enf[numrun];
     double K[numrun];
     double Prob[numrun];
 
@@ -148,15 +151,20 @@ void ManVino(int nbin=300, double nmin= -1, int nmax=20, int npeaks=15){
         vector<double> x(xus, xus + npeak);
         sort(x.begin(), x.end());
         float dmu = 0;
+        float onetwodist;
+        float cutlength;
         //average distance between the peaks
         for (int j = 0; j < npeak - 1; j++)
         {
             dmu += x[j + 1] - x[j];
+            onetwodist = x[1] - x[0];
         }
         dmu = dmu/npeak-1;
+
         //printf("The average distance across %d peaks is %f\n",npeak,dmu);
         //printf("Now fitting\n");
         
+        hist->GetXaxis()->SetRangeUser(nmin, nmax);
 
         //Fitting
         //Fitting one gaussian to the histogram
@@ -236,8 +244,7 @@ void ManVino(int nbin=300, double nmin= -1, int nmax=20, int npeaks=15){
       //Now log-likelihood fit to Vinogradov function
       vector<double>N; //This will be filled with the number of events in each peak
       double N_tot = hist->GetEntries(); //read the number of entries in hist
-       
-      // 
+      
       for (int l=0; l<npeak; l++)
       {
 	
@@ -250,11 +257,9 @@ void ManVino(int nbin=300, double nmin= -1, int nmax=20, int npeaks=15){
       double lambda, P;
       //minimise log likelyhood
       f2->GetMinimumXY(lambda, P);
-      
       double k_dup_ll = P/(1-P);
-      P = k_dup_ll/(1+k_dup_ll);
-      double ff_ll = 1.+(2.*k_dup_ll);
-      cout << " " << "p: " << P << " " << " k_dup: " << k_dup_ll << " Var: " << ff_ll << endl;
+      double ff_ll = lambda*(1.+k_dup_ll)*(1+2.*k_dup_ll);
+      cout << " " << "p: " << P << " " << " k_dup: " << k_dup_ll << " Var: " << ff_ll << " mean: "<< lambda << endl;
       K[lk] = k_dup_ll;
       Prob[lk] = P;
 
@@ -263,9 +268,11 @@ void ManVino(int nbin=300, double nmin= -1, int nmax=20, int npeaks=15){
       double Varroot[numrun];
       Varroot[lk] = sqrt(ff_ll);
       double mean[numrun];
-      mean[lk] = lambda/(1-P);
-      //snr[lk] = mean[lk]/Varroot[lk];
-      snr[lk] = sqrt(lambda)/sqrt(1+P);
+      mean[lk] = lambda*(1+k_dup_ll);
+      snr[lk] = mean[lk]/Varroot[lk];
+      snrin[lk] = sqrt(lambda);
+      snrout[lk] = sqrt(lambda)/sqrt(1+P);
+      enf[lk] = pow(snrin[lk]/snrout[lk],2);
       printf("The SNR is %f for %dV\n",snr[lk],run[lk]);
 
 
@@ -274,7 +281,7 @@ void ManVino(int nbin=300, double nmin= -1, int nmax=20, int npeaks=15){
       int n = (npeak);
       double xv[n], y[n];
       double VinoDist[n];
-      for ( int h = 0; h < n; h++)
+      for ( int h = .0; h < n; h++)
       {
           xv[h] = h;
           y[h] = N[h]/N_tot;
@@ -320,14 +327,36 @@ void ManVino(int nbin=300, double nmin= -1, int nmax=20, int npeaks=15){
       yP[i] = 1.0*Prob[i];
       ex[i] = 0;
    }
+
     TGraph *gr = new TGraph (p, x, y);
-    gr->SetTitle("SNR as a Function of Bias, Calculated from the Vinogradov Function");
-    gr->GetXaxis()->SetTitle("Voltage (V)");
-    gr->GetYaxis()->SetTitle("SNR");
-    gr->Draw("A*");
+    TGraph *grout = new TGraph (p, x, snrout);
+    grout->SetMarkerColor(6);
+    TGraph *grin = new TGraph (p, x, snrin);
+    grin->SetMarkerColor(5);
+   // Create a TMultiGraph and draw it:
+    TMultiGraph *mg6 = new TMultiGraph();
+    mg6->Add(gr);
+    mg6->Add(grout);
+    mg6->Add(grin);
+    mg6->SetTitle("SNR as a Function of Bias, Calculated from the Vinogradov Function");
+    mg6->GetXaxis()->SetTitle("Voltage (V)");
+    mg6->GetYaxis()->SetTitle("SNR");
+    mg6->Draw("A*");
+    TLegend *legsnr = new TLegend(0.7,0.7,0.9,0.9);
+   legsnr->AddEntry(gr,"SNR", "p");
+   legsnr->AddEntry(grout,"SNR_out", "p");
+   legsnr->AddEntry(grin,"SNR_in", "p");
+   legsnr->Draw();
+
+    TCanvas *cenf = new TCanvas("cenf","ENF", 200,10,600,400);
+    TGraph *grenf = new TGraph (p, x, enf);
+    grenf->SetTitle("ENF as a function of voltage");
+    grenf->GetXaxis()->SetTitle("Voltage (V)");
+    grenf->GetYaxis()->SetTitle("ENF");
+    grenf->Draw("A*");
+
 
     TCanvas *ce = new TCanvas("ce","Gain Plot", 200,10,600,400);
-
     TGraphErrors *gre = new TGraphErrors (p, x, gainplot, ex, gainerrplot);
     gre->SetTitle("Gain as a function of voltage");
     gre->GetXaxis()->SetTitle("Voltage (V)");
@@ -365,11 +394,10 @@ void ManVino(int nbin=300, double nmin= -1, int nmax=20, int npeaks=15){
         mg5->GetYaxis()->SetTitle("Probability");
         mg5->Draw("A*");
 
-
-
+   TLegend *leg = new TLegend(0.7,0.7,0.9,0.9);
+   leg->AddEntry(grK,"k_dup", "p");
+   leg->AddEntry(grP,"P", "p");
+   leg->Draw();
+        
+   
 }
-
-
-
-
-
