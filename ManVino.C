@@ -151,20 +151,15 @@ void ManVino(int nbin=300, double nmin= -1, int nmax=20, int npeaks=15){
         vector<double> x(xus, xus + npeak);
         sort(x.begin(), x.end());
         float dmu = 0;
-        float onetwodist;
-        float cutlength;
         //average distance between the peaks
         for (int j = 0; j < npeak - 1; j++)
         {
             dmu += x[j + 1] - x[j];
-            onetwodist = x[1] - x[0];
         }
         dmu = dmu/npeak-1;
 
         //printf("The average distance across %d peaks is %f\n",npeak,dmu);
         //printf("Now fitting\n");
-        
-        hist->GetXaxis()->SetRangeUser(nmin, nmax);
 
         //Fitting
         //Fitting one gaussian to the histogram
