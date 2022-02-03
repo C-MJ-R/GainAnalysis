@@ -227,7 +227,7 @@ void ManVino(int nbin=300, double nmin= -1, int nmax=20, int npeaks=15){
             dmuferr += pow(xperr[v],2);
         }
         dmuf = dmuf/(npeak-1);
-        double xerror = sqrt(dmuferr)/(npeak-1);
+        double xerror = sqrt(dmuferr);
         float gain = ((dmuf*10e-10)/10e3)/1.6e-19;
         float gainerr = ((xerror*10e-10)/10e3)/1.6e-19;
         gainplot[lk] = gain;
@@ -303,6 +303,11 @@ void ManVino(int nbin=300, double nmin= -1, int nmax=20, int npeaks=15){
         mg->GetYaxis()->SetTitle("Relative %");
         mg->GetXaxis()->SetTitleOffset(1.16);
         mg->GetYaxis()->SetTitleOffset(1.16);
+
+        TLegend *legnorm = new TLegend(0.7,0.7,0.9,0.9);
+        legnorm->AddEntry(gr1,"Fit", "p");
+        legnorm->AddEntry(gr2,"Data", "p");
+        legnorm->Draw();
 
         delete oll, f2;
     }
