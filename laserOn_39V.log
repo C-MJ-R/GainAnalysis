@@ -1,0 +1,132 @@
+ Start Log
+ 
+[base]
+ seed 1234
+ nevents 200
+ run_type data
+ map None
+ db_filename None
+ ser 0
+ 
+[daq]
+ n_channels 1
+ eff 0.9
+ jitter 5e-9
+ gate 50e-6
+ pre 10e-6
+ sampling 250e6
+ snr 5
+ mvpp 2000
+ mvoffset -800
+ bits 12
+ noise_spectrum 0
+ boards 2
+ 
+[sipm]
+ response feb
+ spread 0.08
+ dcr 200
+ ap-tau 3e-6
+ ap 0.1
+ dict 0.2
+ phct 0
+ pe_to_mv 7
+ tile_design 0
+ sat_threshold_sumamp -1300
+ sat_threshold_tia -1650
+ 
+[arma]
+ tau 380e-9
+ sigma 10e-9
+ scale 0.9
+ 
+[reco]
+ bl_from 0
+ bl_to 400
+ baseline_from -1e-6
+ baseline_to -20e-9
+ t0_cumfrac 0.20
+ fprompt_from -1e-6
+ fprompt_to 90e-9
+ tot_threshold 6
+ 
+[hit_finding]
+ ma_gate 100
+ min_integral 6
+ window 600
+ 
+[pulse_finding]
+ width 20
+ s1_min 7
+ rolling 800
+ s1_window 500
+ s2_window 3000
+ pre_gate 60
+ 
+[mapping]
+ is_remap False
+ map_type 2x2
+ full_map [[2, 5, 7, 10, 12], [2, 5, 7, 10, 12], [1, 4, 6,   9, 11], [1, 4, 6,   9, 11], [0, 3, 3,   8,   8]]
+ corner_map [[2, -1, -1, -1, -1], [1,   4, -1, -1, -1], [1,   4,  6,  -1, -1], [0,   3,  5,   7, -1], [0,   3,  5,   7,  8]]
+ is_symmetric False
+ 
+[xyreco]
+ method dbscan
+ eps 1
+ min_frac 0.03
+ is_max_chan True
+ m_pdms 5
+ n_pdms 5
+ 
+[toy]
+ generator s1
+ n_chs 1
+ npe 600
+ method poisson
+ fp 0.3
+ lar_tau1 6
+ lar_tau2 1600
+ gar_tau1 10
+ gar_tau2 3600
+ t 1000
+ tdrift 10000
+ gar_sigma 50
+ laser_rms 3
+ fp_2 0.1
+ 
+[view]
+ nbmax_wf 1
+ xzoom 0
+ yzoom 0
+ dist 0
+ 
+[genova]
+ polarity 0
+ baseline_to 1000e-9
+ running_gate 120e-9
+ threshold_in_rms 8
+ min_time_between_peaks 250e-9
+ extended_time_for_integral 500e-9
+ roi_left 40e-9
+ roi_right 900e-9
+ 
+[scint_clustering]
+ window 1000
+ distance 500
+ threshold 5
+ sliding_window 500
+ precluster 20
+ s1window 4000
+ baseline 1000
+ 
+[silicon]
+ threshold 6
+ distance 500
+ bl_samples 1000
+ max_from_min 200
+ range_max_slow 700
+ 
+ PyReco path: /nfs/scratch2/eleason/DarkSide/VPDM_tests/pyreco/pyreco/__init__.py
+ TPC Reconstruction: Active
+ Genova Data Input: Active
+ Genova Data Reconstruction

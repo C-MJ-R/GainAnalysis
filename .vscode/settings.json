@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "ManVino.C": "cpp",
+        "Calibration.C": "cpp",
+        "iterator": "cpp"
+    }
+}

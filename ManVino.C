@@ -5,7 +5,6 @@
 #include <vector>
 #include <sstream>
 #include <fstream>
-
 #include <TFile.h>
 #include <TF1.h>
 #include <TF2.h>
@@ -75,13 +74,13 @@ public:
     }
 };
 //Creating the Histogram 'Finger Plot'
-void ManVino(int nbin=300, double nmin= -1, int nmax=20, int npeaks=15){
+void ManVino(int nbin=200, double nmin= -1.5e-9, double nmax=20e-9, int npeaks=15){
     
     //this sets up for looping over multiple data sets and needs to be changed depending on the data
-    int numrun = 5;     //number of runs
+    int numrun = 3;     //number of runs
     int run[numrun];
-    int start = 65;     //starting voltage
-    int dif = 2;        //difference in voltage between each run
+    int start = 29;     //starting voltage
+    int dif = 1;        //difference in voltage between each run
     double snr[numrun];
     double snrin[numrun];
     double snrout[numrun];
@@ -102,7 +101,7 @@ void ManVino(int nbin=300, double nmin= -1, int nmax=20, int npeaks=15){
     for (int lk = 0; lk < numrun; lk++)
     {
     printf("Analysing run voltage %dV\n,",run[lk]);
-    TFile *f = new TFile(Form("data_11Nov_%dV.root",run[lk]), "read");
+    TFile *f = new TFile(Form("22_04_2022_%dV.root.root",run[lk]), "read");
     //TFile *f = new TFile(Form("data_10Oct_%dV_laserOn.root",run[lk]), "read");
     //Selecting the tree from the .Root file
     TTree *data = (TTree*)f->Get("dstree");
@@ -156,7 +155,8 @@ void ManVino(int nbin=300, double nmin= -1, int nmax=20, int npeaks=15){
         {
             dmu += x[j + 1] - x[j];
         }
-        dmu = dmu/npeak-1;
+        dmu = (dmu/npeak-1)*(1e-9);
+        
 
         //printf("The average distance across %d peaks is %f\n",npeak,dmu);
         //printf("Now fitting\n");
@@ -166,11 +166,11 @@ void ManVino(int nbin=300, double nmin= -1, int nmax=20, int npeaks=15){
         TF1 *g[npeak];
       for (int p=0;p<npeak;p++) 
       {
-            g[p] = new TF1("gaus","gaus",x[p] -dmu, x[p] + dmu);
+            g[p] = new TF1("gaus","gaus",x[p] -dmu/2, x[p] + dmu/2);
 	
             g[p]->SetLineWidth(2);
             g[p]->SetLineColor(kRed);
-            hist->Fit(g[p],"R+Q+0");
+            hist->Fit(g[p],"R+Q"); 
       }
       //Fitting multiple gaussians to the histogram
       string sgaus = "gaus(0) ";
@@ -189,17 +189,17 @@ void ManVino(int nbin=300, double nmin= -1, int nmax=20, int npeaks=15){
 	        sum->SetParameter(k,g[(k-k%3)/3]->GetParameter(k%3));
 	        if(!(k-1)%3) sum->FixParameter(k,g[(k-k%3)/3]->GetParameter(k%3));
             //look in the range +/- dmu/3
-	        if(!(k-1)%3) sum->SetParLimits(k, sum->GetParameter(k) - dmu/3,sum->GetParameter(k) + dmu/3);    
+	        if(!(k-1)%3) sum->SetParLimits(k, sum->GetParameter(k) - dmu,sum->GetParameter(k) + dmu);    
       }
       
-      hist->Fit(sum,"R+Q+0");
+      hist->Fit(sum,"R+Q");
         // this refines the fit, fixes the other paramters and refines the x
        for (int k=0;k<3*npeak;k++)
       {
 	        sum->SetParameter(k,g[(k-k%3)/3]->GetParameter(k%3));
 	        if(!(k-1)%3) sum->ReleaseParameter(k);
             //look in the range =/- dmu/3
-            if(!(k-1)%3) sum->SetParLimits(k, sum->GetParameter(k) - dmu/3,sum->GetParameter(k) + dmu/3);
+            if(!(k-1)%3) sum->SetParLimits(k, sum->GetParameter(k) - dmu,sum->GetParameter(k) + dmu);
       }
       
        sum->SetLineWidth(2);
@@ -212,7 +212,7 @@ void ManVino(int nbin=300, double nmin= -1, int nmax=20, int npeaks=15){
        {
            xpfit.push_back(sum->GetParameter((3*w)+1));
            xperr.push_back(sum->GetParError((3*w)+1));
-           printf("The %i PE peak x-position is %f +/- %f\n", w, xpfit[w], xperr[w]);
+           printf("The %i PE peak x-position is %g +/- %g\n", w, xpfit[w], xperr[w]);
        }
        float dmuf = 0;
        float dmuferr = 0;
@@ -228,11 +228,11 @@ void ManVino(int nbin=300, double nmin= -1, int nmax=20, int npeaks=15){
         }
         dmuf = dmuf/(npeak-1);
         double xerror = sqrt(dmuferr);
-        float gain = ((dmuf*10e-10)/10e3)/1.6e-19;
-        float gainerr = ((xerror*10e-10)/10e3)/1.6e-19;
+        float gain = (dmuf/10e3)/1.6e-19;
+        float gainerr = (xerror/10e3)/1.6e-19;
         gainplot[lk] = gain;
         gainerrplot[lk] = gainerr;
-        printf("The average fitted distance across %d peaks is %f +/- %f\n",npeak,dmuf,xerror);
+        printf("The average fitted distance across %d peaks is %g +/- %g\n",npeak,dmuf,xerror);
         printf("The Gain is %f +/-%f\n",gain, gainerr);
         printf("Now fitting\n");
       
