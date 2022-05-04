@@ -74,7 +74,7 @@ public:
     }
 };
 //Creating the Histogram 'Finger Plot'
-void ManVino(int nbin=200, double nmin= -2e-9, double nmax=20e-9, int npeaks=15){
+void ManVino(int nbin=200, double nmin= -2e-9, double nmax=20e-9, double npeaks=15){
     
     //this sets up for looping over multiple data sets and needs to be changed depending on the data
     int numrun = 3;     //number of runs
@@ -100,9 +100,8 @@ void ManVino(int nbin=200, double nmin= -2e-9, double nmax=20e-9, int npeaks=15)
     TCanvas *c1[numrun*2];
     for (int lk = 0; lk < numrun; lk++)
     {
-    printf("Analysing run voltage %dV\n,",run[lk]);
+    printf("Analysing run voltage %dV\n",run[lk]);
     TFile *f = new TFile(Form("22_04_2022_%dV.root.root",run[lk]), "read");
-    //TFile *f = new TFile(Form("data_10Oct_%dV_laserOn.root",run[lk]), "read");
     //Selecting the tree from the .Root file
     TTree *data = (TTree*)f->Get("dstree");
         
@@ -150,24 +149,13 @@ void ManVino(int nbin=200, double nmin= -2e-9, double nmax=20e-9, int npeaks=15)
         {
             dmu += x[j + 1] - x[j];
         }
-        dmu = (dmu/npeak-1)*(1e-9);
-         //printing the peak x-positions
-        //for (int i = 0; i < npeak; i++)
-        //{
-        //    printf("The %i PE peak x-position is %g\n", i, x[i]);
-        //};
-        
-
-        //printf("The average distance across %d peaks is %f\n",npeak,dmu);
-        //printf("Now fitting\n");
-
+        dmu = dmu/((npeak*1.0)-1.0);
         //Fitting
         //Fitting one gaussian to the histogram
         TF1 *g[npeak];
       for (int p=0;p<npeak;p++) 
       {
             g[p] = new TF1("gaus","gaus",x[p] -dmu/2, x[p] + dmu/2);
-	
             g[p]->SetLineWidth(2);
             g[p]->SetLineColor(kRed);
             hist->Fit(g[p],"R+Q+0"); 
@@ -179,7 +167,7 @@ void ManVino(int nbin=200, double nmin= -2e-9, double nmax=20e-9, int npeaks=15)
             sgaus += Form("+ gaus(%d) ", 3*ss);
       } 
       
-      sum = new TF1("mysum",sgaus.c_str(),x[0] - dmu, x[npeak - 1] + dmu);
+      sum = new TF1("mysum",sgaus.c_str(),x[0] - dmu/3, x[npeak - 1] + dmu/3);
       sum->SetNpx(1000);
       //This sections sets the paramters of the gaussian
       //fixes everything but the x paramter to fit the x for k = 0,1,2,3... false, true, false, false, true, false
@@ -192,7 +180,7 @@ void ManVino(int nbin=200, double nmin= -2e-9, double nmax=20e-9, int npeaks=15)
 	        if(!(k-1)%3) sum->SetParLimits(k, sum->GetParameter(k) - dmu/3,sum->GetParameter(k) + dmu/3);    
       }
       
-      hist->Fit(sum,"R+Q");
+      hist->Fit(sum,"R+Q+0");
         // this refines the fit, fixes the other paramters and refines the x
        for (int k=0;k<3*npeak;k++)
       {
@@ -208,7 +196,7 @@ void ManVino(int nbin=200, double nmin= -2e-9, double nmax=20e-9, int npeaks=15)
        vector<double>xpfit;
        vector<double>xperr;
        //extracting fit paramters and their associated errors
-       for (int w=0;w<npeak-1;w++)
+       for (int w=0;w<npeak;w++)
        {
            xpfit.push_back(sum->GetParameter((3*w)+1));
            xperr.push_back(sum->GetParError((3*w)+1));
@@ -217,16 +205,15 @@ void ManVino(int nbin=200, double nmin= -2e-9, double nmax=20e-9, int npeaks=15)
        float dmuf = 0;
        float dmuferr = 0;
         //average fitted distance between the peaks
-        for (int t = 0; t < npeak -1 ; t++)
+        for (int t = 1; t < npeak -1 ; t++)
         {
             dmuf += xpfit[t + 1] - xpfit[t];
-            //printf("%f\n",dmuf);
         }
-        for (int v =0; v < npeak; v++)
+        for (int v =1; v < npeak -1; v++)
         {
             dmuferr += pow(xperr[v],2);
         }
-        dmuf = dmuf/(npeak-1);
+        dmuf = dmuf/((npeak*1.0)-1.0);
         double xerror = sqrt(dmuferr);
         float gain = (dmuf/10e3)/1.6e-19;
         float gainerr = (xerror/10e3)/1.6e-19;
