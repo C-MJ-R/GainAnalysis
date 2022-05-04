@@ -74,7 +74,7 @@ public:
     }
 };
 //Creating the Histogram 'Finger Plot'
-void ManVino(int nbin=200, double nmin= -1.5e-9, double nmax=20e-9, int npeaks=15){
+void ManVino(int nbin=200, double nmin= -2e-9, double nmax=20e-9, int npeaks=15){
     
     //this sets up for looping over multiple data sets and needs to be changed depending on the data
     int numrun = 3;     //number of runs
@@ -140,11 +140,6 @@ void ManVino(int nbin=200, double nmin= -1.5e-9, double nmax=20e-9, int npeaks=1
 
         //array with X-positions of the centroids found by TSpectrum
         double *xus = s->GetPositionX(); 
-        //printing the peak x-positions
-        /*for (int i = 0; i < npeak; i++)
-        {
-            printf("The %i PE peak x-position is %f\n", i, xus[i]);
-        };*/
         
         //Using x-positions of the centroids to find the average distance
         vector<double> x(xus, xus + npeak);
@@ -156,6 +151,11 @@ void ManVino(int nbin=200, double nmin= -1.5e-9, double nmax=20e-9, int npeaks=1
             dmu += x[j + 1] - x[j];
         }
         dmu = (dmu/npeak-1)*(1e-9);
+         //printing the peak x-positions
+        //for (int i = 0; i < npeak; i++)
+        //{
+        //    printf("The %i PE peak x-position is %g\n", i, x[i]);
+        //};
         
 
         //printf("The average distance across %d peaks is %f\n",npeak,dmu);
@@ -170,11 +170,11 @@ void ManVino(int nbin=200, double nmin= -1.5e-9, double nmax=20e-9, int npeaks=1
 	
             g[p]->SetLineWidth(2);
             g[p]->SetLineColor(kRed);
-            hist->Fit(g[p],"R+Q"); 
+            hist->Fit(g[p],"R+Q+0"); 
       }
       //Fitting multiple gaussians to the histogram
       string sgaus = "gaus(0) ";
-      for (int ss = 1; ss < npeak; ss++)
+      for (int ss = 1; ss < npeak+1; ss++)
       {
             sgaus += Form("+ gaus(%d) ", 3*ss);
       } 
@@ -189,7 +189,7 @@ void ManVino(int nbin=200, double nmin= -1.5e-9, double nmax=20e-9, int npeaks=1
 	        sum->SetParameter(k,g[(k-k%3)/3]->GetParameter(k%3));
 	        if(!(k-1)%3) sum->FixParameter(k,g[(k-k%3)/3]->GetParameter(k%3));
             //look in the range +/- dmu/3
-	        if(!(k-1)%3) sum->SetParLimits(k, sum->GetParameter(k) - dmu,sum->GetParameter(k) + dmu);    
+	        if(!(k-1)%3) sum->SetParLimits(k, sum->GetParameter(k) - dmu/3,sum->GetParameter(k) + dmu/3);    
       }
       
       hist->Fit(sum,"R+Q");
@@ -199,7 +199,7 @@ void ManVino(int nbin=200, double nmin= -1.5e-9, double nmax=20e-9, int npeaks=1
 	        sum->SetParameter(k,g[(k-k%3)/3]->GetParameter(k%3));
 	        if(!(k-1)%3) sum->ReleaseParameter(k);
             //look in the range =/- dmu/3
-            if(!(k-1)%3) sum->SetParLimits(k, sum->GetParameter(k) - dmu,sum->GetParameter(k) + dmu);
+            if(!(k-1)%3) sum->SetParLimits(k, sum->GetParameter(k) - dmu/3,sum->GetParameter(k) + dmu/3);
       }
       
        sum->SetLineWidth(2);
@@ -208,7 +208,7 @@ void ManVino(int nbin=200, double nmin= -1.5e-9, double nmax=20e-9, int npeaks=1
        vector<double>xpfit;
        vector<double>xperr;
        //extracting fit paramters and their associated errors
-       for (int w=0;w<npeak;w++)
+       for (int w=0;w<npeak-1;w++)
        {
            xpfit.push_back(sum->GetParameter((3*w)+1));
            xperr.push_back(sum->GetParError((3*w)+1));
